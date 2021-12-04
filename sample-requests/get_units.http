@@ -1,0 +1,3 @@
+GET https://app.groupalarm.com/api/v1/units?organization={{organization-id}}
+Content-Type: application/json
+API-Token: {{api-token}}

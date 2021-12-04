@@ -1,0 +1,11 @@
+POST https://app.groupalarm.com/api/v1/alarm
+Content-Type: application/json
+API-Token: {{api-token}}
+
+{
+  "alarmResources": {"allUsers": true},
+  "message": "Testalarm",
+  "organizationID": {{organization-id}},
+  "startTime": "2021-12-04T13:06:00Z",
+  "eventName": "Testalarm 2"
+}
