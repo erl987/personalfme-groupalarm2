@@ -3,16 +3,16 @@ login:
   api-token: abcdefg
 
 alarms:
-  12345:
+  "12345":
     resources:
-#     allUsers: True
-#     labels:
-#       - Kraftfahrer: 1
-#       - CBRN: 1
-     scenarios:
-       - SEG-Alarm
+#      allUsers: True
+      labels:
+        - Kraftfahrer: 1
+        - CBRN: 1
+#      scenarios:
+#        - SEG-Alarm
 #      units:
 #        - B
-#   message: Einsatz für den Technischen Zug!
+#    message: Einsatz für den Technischen Zug!
     messageTemplate: SEG-Alarm
     closeEventInHours: 2

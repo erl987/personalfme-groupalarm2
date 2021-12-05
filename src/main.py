@@ -1,12 +1,68 @@
 import sys
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Tuple
 
+from cerberus import Validator
 import requests
 import yaml
 
 API_ENDPOINT = 'https://app.groupalarm.com/api/v1'
 CONFIG_FILE_PATH = r'../config/config.yaml'
+
+YAML_CONFIG_FILE_SCHEMA = {
+    'config': {
+        'type': 'dict',
+        'schema': {
+            'login': {
+                'type': 'dict',
+                'schema': {
+                    'organization-id': {'type': 'integer'},
+                    'api-token': {'type': 'string'}
+                }
+            },
+            'alarms': {
+                'type': 'dict',
+                'keyschema': {'type': 'string', 'minlength': 5, 'maxlength': 5},
+                'valueschema': {
+                    'type': 'dict',
+                    'schema': {
+                        'resources': {
+                            'type': 'dict',
+                            'schema': {
+                                'allUsers': {'type': 'boolean', 'excludes': ['labels', 'scenarios', 'units']},
+                                'labels': {
+                                    'type': 'list',
+                                    'excludes': ['allUsers', 'scenarios', 'units'],
+                                    'schema': {
+                                        'type': 'dict',
+                                        'keyschema': {'type': 'string'},
+                                        'valueschema': {'type': 'integer', 'min': 1},
+                                        'minlength': 1,
+                                        'maxlength': 1
+                                    }
+                                },
+                                'scenarios': {
+                                    'type': 'list',
+                                    'excludes': ['allUsers', 'labels', 'units'],
+                                    'schema': {'type': 'string'}
+                                },
+                                'units': {
+                                    'type': 'list',
+                                    'excludes': ['allUsers', 'labels', 'scenarios'],
+                                    'schema': {'type': 'string'}
+                                }
+                            }
+                        },
+                        'message': {'type': 'string', 'excludes': 'messageTemplate'},
+                        'messageTemplate': {'type': 'string', 'excludes': 'message'},
+                        'closeEventInHours': {'type': 'integer', 'min': 0}
+                    }
+                }
+            }
+        }
+    }
+
+}
 
 
 def get_header(api_token):
@@ -19,6 +75,10 @@ def get_header(api_token):
 def read_config_file():
     with open(CONFIG_FILE_PATH) as yaml_file:
         config = yaml.load(yaml_file, Loader=yaml.FullLoader)
+
+    v = Validator(require_all=True)
+    if not v.validate({'config': config}, YAML_CONFIG_FILE_SCHEMA):
+        raise SyntaxError(v.errors)
 
     return config
 
@@ -171,8 +231,8 @@ def _check_alarm_code_has_config(alarm_code, config):
         raise ValueError(f'No alarm configuration for the alarm code {alarm_code}')
 
 
-def get_command_line_arguments():
-    alarm_code = int(sys.argv[1])
+def get_command_line_arguments() -> Tuple[str, str, str]:
+    alarm_code = sys.argv[1]
     alarm_time_point = sys.argv[2]
     alarm_type = sys.argv[3]
 
