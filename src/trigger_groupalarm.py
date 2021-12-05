@@ -1,3 +1,4 @@
+import argparse
 import sys
 from datetime import datetime, timedelta
 from typing import List, Tuple
@@ -153,7 +154,7 @@ def get_close_event_time_period(alarm_code, config) -> timedelta:
     return timedelta(hours=config['alarms'][alarm_code]['closeEventInHours'])
 
 
-def send_alarm(config, alarm_time_point, alarm_code, alarm_type):
+def send_alarm(config, alarm_time_point, alarm_code, alarm_type, do_emit_alarm):
     organization_id = config['login']['organization-id']
     api_token = config['login']['api-token']
 
@@ -173,9 +174,18 @@ def send_alarm(config, alarm_time_point, alarm_code, alarm_type):
     elif alarm_template_id:
         request_body['alarmTemplateID'] = alarm_template_id
 
-    r = requests.post(API_ENDPOINT + '/alarm', headers=get_header(api_token), json=request_body)
+    preview_endpoint = ''
+    if not do_emit_alarm:
+        preview_endpoint = '/preview'
+    r = requests.post(API_ENDPOINT + '/alarm' + preview_endpoint, headers=get_header(api_token), json=request_body)
     json_response = _get_json_response(r)
     r.raise_for_status()
+
+    if do_emit_alarm:
+        print('Triggered successfully the alarm')
+    else:
+        print('The alarm configuration was validated and tested on Groupalarm.com and is valid')
+
     return json_response
 
 
@@ -231,19 +241,26 @@ def _check_alarm_code_has_config(alarm_code, config):
         raise ValueError(f'No alarm configuration for the alarm code {alarm_code}')
 
 
-def get_command_line_arguments() -> Tuple[str, str, str]:
-    alarm_code = sys.argv[1]
-    alarm_time_point = sys.argv[2]
-    alarm_type = sys.argv[3]
+def get_command_line_arguments() -> Tuple[str, str, str, bool]:
+    parser = argparse.ArgumentParser(description='Trigger a GroupAlarm.com alarm')
+    parser.add_argument('code', type=str, help='The selcall alarm code (e.g. 09234)')
+    parser.add_argument('time_point', type=str, help='The time point where the alarm has been received, '
+                                                     'e.g. "05.12.2021 19:51:52"')
+    parser.add_argument('type', type=str, help='The type of the alarm (e.g. "Einsatzalarmierung" or "Probealarm")')
+    parser.add_argument('-t', '--test', action='store_true', help='Only tests if this configuration would be valid - '
+                                                                  'no alarm is actually emitted')
 
-    return alarm_time_point, alarm_code, alarm_type
+    args = parser.parse_args()
+    do_emit_alarm = not args.test
+
+    return args.time_point, args.code, args.type, do_emit_alarm
 
 
 def main():
     try:
-        alarm_time_point, alarm_code, alarm_type = get_command_line_arguments()
+        alarm_time_point, alarm_code, alarm_type, do_emit_alarm = get_command_line_arguments()
         config = read_config_file()
-        send_alarm(config, alarm_time_point, alarm_code, alarm_type)
+        send_alarm(config, alarm_time_point, alarm_code, alarm_type, do_emit_alarm)
     except Exception as e:
         print(f'Error: {e}', file=sys.stderr)
 
