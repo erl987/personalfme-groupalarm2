@@ -27,23 +27,39 @@ def _get_entity_ids_from_endpoint(entity_names, organization_id, api_token, sub_
                                   organization_param='organization') -> List[int]:
     r = requests.get(API_ENDPOINT + f'/{sub_endpoint}?{organization_param}={organization_id}',
                      headers=get_header(api_token))
-    response = r.json()
+    json_response = _get_json_response(r)
     r.raise_for_status()
 
     entity_id_map = {}
-
-    for entry in response:
+    for entry in json_response:
         entity_id_map[entry['name']] = entry['id']
 
+    found_entity_names = []
     entity_ids = []
     for entity_name in entity_names:
         if entity_name in entity_id_map:
             entity_ids.append(entity_id_map[entity_name])
+            found_entity_names.append(entity_name)
 
     if len(entity_ids) != len(entity_names):
-        raise ValueError(f'No all entities {sub_endpoint} found in the Groupalarm organization')
+        missing_entities = set(entity_names).difference(set(found_entity_names))
+        raise ValueError(f'Did not find the following *{sub_endpoint}* in the Groupalarm '
+                         f'organization {organization_id}: ' + ', '.join(missing_entities))
 
     return entity_ids
+
+
+def _get_json_response(r):
+    if 'Content-Type' in r.headers and r.headers.get('Content-Type').startswith('application/json'):
+        response = r.json()
+        if 'success' in response and 'error' in response and not response['success']:
+            message = response['message']
+            details = response['error']
+            print(f'Error message: {message}, details: {details}', file=sys.stderr)
+    else:
+        response = None
+
+    return response
 
 
 def get_ids_for_units(unit_names, organization_id, api_token) -> List[int]:
@@ -98,9 +114,9 @@ def send_alarm(config, alarm_time_point, alarm_code, alarm_type):
         request_body['alarmTemplateID'] = alarm_template_id
 
     r = requests.post(API_ENDPOINT + '/alarm', headers=get_header(api_token), json=request_body)
-    print(r.status_code)
-    #r.raise_for_status()
-    print(r.json())
+    json_response = _get_json_response(r)
+    r.raise_for_status()
+    return json_response
 
 
 def get_alarm_message(alarm_code, config, organization_id, api_token):
@@ -164,9 +180,12 @@ def get_command_line_arguments():
 
 
 def main():
-    alarm_time_point, alarm_code, alarm_type = get_command_line_arguments()
-    config = read_config_file()
-    send_alarm(config, alarm_time_point, alarm_code, alarm_type)
+    try:
+        alarm_time_point, alarm_code, alarm_type = get_command_line_arguments()
+        config = read_config_file()
+        send_alarm(config, alarm_time_point, alarm_code, alarm_type)
+    except Exception as e:
+        print(f'Error: {e}', file=sys.stderr)
 
 
 if __name__ == '__main__':
