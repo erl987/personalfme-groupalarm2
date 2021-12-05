@@ -16,9 +16,10 @@ YAML_CONFIG_FILE_SCHEMA = {
         'schema': {
             'login': {
                 'type': 'dict',
+                'required': False,
                 'schema': {
-                    'organization-id': {'type': 'integer'},
-                    'api-token': {'type': 'string'}
+                    'organization-id': {'type': 'integer', 'required': False},
+                    'api-token': {'type': 'string', 'required': False}
                 }
             },
             'alarms': {
@@ -80,6 +81,29 @@ def read_config_file(config_file_path):
     v = Validator(require_all=True)
     if not v.validate({'config': config}, YAML_CONFIG_FILE_SCHEMA):
         raise SyntaxError(v.errors)
+
+    if 'login' not in config:
+        config['login'] = {}
+
+    if 'organization-id' not in config['login']:
+        if 'ORGANIZATION_ID' not in os.environ:
+            raise EnvironmentError('The Groupalarm organization id either needs to be provided in the environment '
+                                   'variable ORGANIZATION_ID or in the YAML configuration file')
+        config['login']['organization-id'] = int(os.getenv('ORGANIZATION_ID'))
+    else:
+        if 'ORGANIZATION_ID' in os.environ:
+            raise EnvironmentError('The Groupalarm organization id is both provided in the environment variable '
+                                   'ORGANIZATION_ID as well as in the YAML configuration file')
+
+    if 'api-token' not in config['login']:
+        if 'API_TOKEN' not in os.environ:
+            raise EnvironmentError('The Groupalarm API token either needs to be provided in the environment '
+                                   'variable API-TOKEN or in the YAML configuration file')
+        config['login']['api-token'] = os.getenv('API_TOKEN')
+    else:
+        if 'API_TOKEN' in os.environ:
+            raise EnvironmentError('The Groupalarm API token is both provided in the environment variable '
+                                   'API_TOKEN as well as in the YAML configuration file')
 
     return config
 
