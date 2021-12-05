@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 from datetime import datetime, timedelta
 from typing import List, Tuple
@@ -8,8 +9,7 @@ import requests
 import yaml
 
 API_ENDPOINT = 'https://app.groupalarm.com/api/v1'
-CONFIG_FILE_PATH = r'../config/config.yaml'
-
+DEFAULT_CONFIG_FILE_PATH = r'../config/config.yaml'
 YAML_CONFIG_FILE_SCHEMA = {
     'config': {
         'type': 'dict',
@@ -73,8 +73,8 @@ def get_header(api_token):
     }
 
 
-def read_config_file():
-    with open(CONFIG_FILE_PATH) as yaml_file:
+def read_config_file(config_file_path):
+    with open(config_file_path) as yaml_file:
         config = yaml.load(yaml_file, Loader=yaml.FullLoader)
 
     v = Validator(require_all=True)
@@ -241,7 +241,7 @@ def _check_alarm_code_has_config(alarm_code, config):
         raise ValueError(f'No alarm configuration for the alarm code {alarm_code}')
 
 
-def get_command_line_arguments() -> Tuple[str, str, str, bool]:
+def get_command_line_arguments():
     parser = argparse.ArgumentParser(description='Trigger a GroupAlarm.com alarm')
     parser.add_argument('code', type=str, help='The selcall alarm code (e.g. 09234)')
     parser.add_argument('time_point', type=str, help='The time point where the alarm has been received, '
@@ -249,17 +249,24 @@ def get_command_line_arguments() -> Tuple[str, str, str, bool]:
     parser.add_argument('type', type=str, help='The type of the alarm (e.g. "Einsatzalarmierung" or "Probealarm")')
     parser.add_argument('-t', '--test', action='store_true', help='Only tests if this configuration would be valid - '
                                                                   'no alarm is actually emitted')
+    parser.add_argument('-c', '--config-file', help='Path to the YAML configuration file, if not provided the default '
+                                                    'configuration file `config/config.yaml` is used')
 
     args = parser.parse_args()
     do_emit_alarm = not args.test
 
-    return args.time_point, args.code, args.type, do_emit_alarm
+    if args.config_file:
+        config_file_path = args.config_file
+    else:
+        config_file_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), DEFAULT_CONFIG_FILE_PATH))
+
+    return args.time_point, args.code, args.type, do_emit_alarm, config_file_path
 
 
 def main():
     try:
-        alarm_time_point, alarm_code, alarm_type, do_emit_alarm = get_command_line_arguments()
-        config = read_config_file()
+        alarm_time_point, alarm_code, alarm_type, do_emit_alarm, config_file_path = get_command_line_arguments()
+        config = read_config_file(config_file_path)
         send_alarm(config, alarm_time_point, alarm_code, alarm_type, do_emit_alarm)
     except Exception as e:
         print(f'Error: {e}', file=sys.stderr)
