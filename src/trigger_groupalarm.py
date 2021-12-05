@@ -2,11 +2,11 @@ import argparse
 import os
 import sys
 from datetime import datetime, timedelta
-from typing import List, Tuple
+from typing import List
 
-from cerberus import Validator
 import requests
 import yaml
+from cerberus import Validator
 
 API_ENDPOINT = 'https://app.groupalarm.com/api/v1'
 DEFAULT_CONFIG_FILE_PATH = r'../config/config.yaml'
