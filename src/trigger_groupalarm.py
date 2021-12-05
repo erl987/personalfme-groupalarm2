@@ -225,7 +225,7 @@ def get_alarm_message(alarm_code, config, organization_id, api_token):
     elif 'messageTemplate' in alarm_config:
         alarm_template_id = get_alarm_template_id(alarm_config['messageTemplate'], organization_id, api_token)
     else:
-        raise AssertionError('Incorrect YAML configuration file: no alarm message')
+        raise ValueError('Incorrect YAML configuration file: no alarm message')
 
     return alarm_template_id, message
 
@@ -255,7 +255,7 @@ def get_alarm_resources(alarm_code, api_token, config, organization_id):
         scenario_ids = get_ids_for_scenarios(resources['scenarios'], organization_id, api_token)
         alarm_resources = {'scenarios': scenario_ids}
     else:
-        raise AssertionError('Incorrect YAML configuration file: no alarm resources')
+        raise ValueError('Incorrect YAML configuration file: no alarm resources')
 
     return alarm_resources
 
