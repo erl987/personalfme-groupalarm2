@@ -87,7 +87,7 @@ Alternativ können die Login-Informationen in Umgebungsvariablen gespeichert wer
 ### Login
 
 Hier werden die erforderlichen Informationen aus Ihrem Konto bei www.groupalarm.com eingetragen. Loggen Sie sich dort
-ein, um die nötigen Informationen festzustellen.
+ein, um die nötigen Informationen festzustellen:
 
 * Unter *Organisation* -> *...* -> *Einstellungen* finden Sie Ihre Organisations-ID.
 * Unter *Admin* -> *Berechtigungen* -> *API-Schlüssel* können Sie Ihren API-Schlüssel erzeugen, dieser funktioniert
@@ -95,13 +95,13 @@ ein, um die nötigen Informationen festzustellen.
   Geben Sie dem API-Schlüssel einen sinnvollen Namen wie z.B. `PersonalFME`.
 
 
-# Alarmschleifen
+### Alarmschleifen
 
 Für jede Alarmschleife muss eine separate Groupalarm-Konfiguration angegeben werden. Diese wird später durch die
 Angabe der entsprechenden Schleife als Kommandozeilenparameter ausgelöst.
 
 
-# Alarm-Ressourcen
+### Alarm-Ressourcen
 
 Es können **entweder** Labels, Szenarien oder Einheiten alarmiert werden. Diese können nicht gemischt werden.
 Im Falle von Labels wird für jede Position die gewünschte Anzahl festgelegt.
@@ -109,16 +109,14 @@ In allen Fällen erfolgt die Angabe über den in Groupalarm.com definierten *Nam
 Umlaute oder Sonderzeichen enthalten, um Problemen mit dem Encoding der YAML-Datei vorzubeugen**.
 Konfigurieren Sie Groupalarm so, wie Sie das benötigen.
 
-# Alarmnachricht
+### Alarmnachricht
 
 Als Alarmnachricht kann entweder ein individueller Text oder eine *Alarmvorlage* benutzt werden.
 
-# Groupalarm-Ereignis
+### Groupalarm-Ereignis
 
 Jede Alarmierung erzeugt ein neues *Ereignis* in Groupalarm und dieses kann automatisch geschlossen werden, wenn
 `closeEventInHours` angegeben wird. Andernfalls wird das *Ereignis* nicht automatisch geschlossen.
-# TODO: does not work yet ...
-
 
 # Einbindung in PersonalFME
 
