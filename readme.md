@@ -204,7 +204,8 @@ gezeigt, wie das unter Windows direkt aus *PersonalFME* heraus funktioniert.
 # Lizenz
 
 **personalfme-groupalarm2 - Trigger alarms via groupalarm.com on the command line**
-** Copyright (C) 2021 Ralf Rettig (info@personalfme.de)**
+ 
+ **Copyright (C) 2021 Ralf Rettig (info@personalfme.de)**
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Affero General Public License as
