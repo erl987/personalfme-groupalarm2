@@ -57,7 +57,7 @@ YAML_CONFIG_FILE_SCHEMA = {
                         },
                         'message': {'type': 'string', 'excludes': 'messageTemplate'},
                         'messageTemplate': {'type': 'string', 'excludes': 'message'},
-                        'closeEventInHours': {'type': 'integer', 'min': 0}
+                        'closeEventInHours': {'type': 'integer', 'required': False, 'min': 0}
                     }
                 }
             }
@@ -172,8 +172,11 @@ def to_isoformat_string(time_point: datetime):
     return time_point.isoformat() + 'Z'
 
 
-def get_close_event_time_period(alarm_code, config) -> timedelta:
+def get_close_event_time_period(alarm_code, config):
     _check_alarm_code_has_config(alarm_code, config)
+
+    if 'closeEventInHours' not in config['alarms'][alarm_code]:
+        return None
 
     return timedelta(hours=config['alarms'][alarm_code]['closeEventInHours'])
 
@@ -189,9 +192,12 @@ def send_alarm(config, alarm_time_point, alarm_code, alarm_type, do_emit_alarm):
         'alarmResources': alarm_resources,
         'organizationID': organization_id,
         'startTime': to_isoformat_string(datetime.utcnow()),
-        'scheduledEndTime': to_isoformat_string(datetime.utcnow() + get_close_event_time_period(alarm_code, config)),
         'eventName': f'[Funkmelderalarm] Schleife {alarm_code} {alarm_time_point} ({alarm_type})'
     }
+
+    close_event_time_period = get_close_event_time_period(alarm_code, config)
+    if close_event_time_period:
+        request_body['scheduledEndTime'] = to_isoformat_string(datetime.utcnow() + close_event_time_period)
 
     if message:
         request_body['message'] = message
@@ -282,7 +288,8 @@ def get_command_line_arguments():
     if args.config_file:
         config_file_path = args.config_file
     else:
-        config_file_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), DEFAULT_CONFIG_FILE_PATH))
+        config_file_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                        DEFAULT_CONFIG_FILE_PATH))
 
     return args.time_point, args.code, args.type, do_emit_alarm, config_file_path
 
