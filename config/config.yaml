@@ -1,6 +1,6 @@
-#login:
-#  organization-id: 12345
-#  api-token: abcdefgh
+login:
+  organization-id: 12345
+  api-token: abcdefgh
 
 alarms:
   "12345":
