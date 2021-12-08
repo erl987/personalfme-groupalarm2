@@ -76,6 +76,9 @@ alarms:
 
     # optional:
     closeEventInHours: 2
+  "12345":
+    resources:
+      # Konfiguration für eine weitere Alarmschleife ...
 ```
 
 Alternativ können die Login-Informationen in Umgebungsvariablen gespeichert werden:
