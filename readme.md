@@ -123,6 +123,8 @@ Jede Alarmierung erzeugt ein neues *Ereignis* in Groupalarm und dieses kann auto
 
 # Einbindung in PersonalFME
 
+**Benötigte Softwareversion: PersonalFME 0.2.3 oder neuer**
+
 Die Einbindung der Alarmierungen in PersonalFME erfolgt als **externes Programm**. Unter Windows (mit Anaconda)
 könnte das so aussehen:
 
