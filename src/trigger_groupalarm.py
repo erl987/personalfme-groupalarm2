@@ -38,6 +38,16 @@ YAML_CONFIG_FILE_SCHEMA = {
                     'api-token': {'type': 'string', 'required': False}
                 }
             },
+            'proxy': {
+                'type': 'dict',
+                'required': False,
+                'schema': {
+                    'address': {'type': 'string'},
+                    'port': {'type': 'integer'},
+                    'username': {'type': 'string', 'required': False},
+                    'password': {'type': 'string', 'required': False}
+                }
+            },
             'alarms': {
                 'type': 'dict',
                 'keyschema': {'type': 'string', 'minlength': 5, 'maxlength': 5},
@@ -124,10 +134,30 @@ def read_config_file(config_file_path):
     return config
 
 
-def _get_entity_ids_from_endpoint(entity_names, organization_id, api_token, sub_endpoint,
+def _get_proxies(proxy_config):
+    if 'username' in proxy_config:
+        user = proxy_config['username']
+    else:
+        user = None
+    if 'password' in proxy_config:
+        password = proxy_config['password']
+    else:
+        password = None
+    address = proxy_config['address']
+    port = proxy_config['port']
+
+    if user and password:
+        return {'https': f'https://{user}:{password}@{address}:{port}'}
+    elif user:
+        return {'https': f'https://{user}@{address}:{port}'}
+    else:
+        return {'https': f'https://{address}:{port}'}
+
+
+def _get_entity_ids_from_endpoint(entity_names, organization_id, api_token, proxy_config, sub_endpoint,
                                   organization_param='organization') -> List[int]:
     r = requests.get(API_ENDPOINT + f'/{sub_endpoint}?{organization_param}={organization_id}',
-                     headers=get_header(api_token))
+                     headers=get_header(api_token), proxies=_get_proxies(proxy_config))
     json_response = _get_json_response(r)
     r.raise_for_status()
 
@@ -163,25 +193,25 @@ def _get_json_response(r):
     return response
 
 
-def get_ids_for_units(unit_names, organization_id, api_token) -> List[int]:
-    return _get_entity_ids_from_endpoint(unit_names, organization_id, api_token, 'units')
+def get_ids_for_units(unit_names, organization_id, api_token, proxy_config) -> List[int]:
+    return _get_entity_ids_from_endpoint(unit_names, organization_id, api_token, proxy_config, 'units')
 
 
-def get_ids_for_labels(label_names, organization_id, api_token) -> List[int]:
-    return _get_entity_ids_from_endpoint(label_names, organization_id, api_token, 'labels')
+def get_ids_for_labels(label_names, organization_id, api_token, proxy_config) -> List[int]:
+    return _get_entity_ids_from_endpoint(label_names, organization_id, api_token, proxy_config, 'labels')
 
 
-def get_ids_for_users(user_names, organization_id, api_token) -> List[int]:
-    return _get_entity_ids_from_endpoint(user_names, organization_id, api_token, 'users')
+def get_ids_for_users(user_names, organization_id, api_token, proxy_config) -> List[int]:
+    return _get_entity_ids_from_endpoint(user_names, organization_id, api_token, proxy_config, 'users')
 
 
-def get_ids_for_scenarios(scenario_names, organization_id, api_token) -> List[int]:
-    return _get_entity_ids_from_endpoint(scenario_names, organization_id, api_token, 'scenarios')
+def get_ids_for_scenarios(scenario_names, organization_id, api_token, proxy_config) -> List[int]:
+    return _get_entity_ids_from_endpoint(scenario_names, organization_id, api_token, proxy_config, 'scenarios')
 
 
-def get_alarm_template_id(alarm_template_name, organization_id, api_token) -> int:
-    return _get_entity_ids_from_endpoint([alarm_template_name], organization_id, api_token, 'alarms/templates',
-                                         'organization_id')[0]
+def get_alarm_template_id(alarm_template_name, organization_id, api_token, proxy_config) -> int:
+    return _get_entity_ids_from_endpoint([alarm_template_name], organization_id, api_token, proxy_config,
+                                         'alarms/templates', 'organization_id')[0]
 
 
 def to_isoformat_string(time_point: datetime):
@@ -200,9 +230,10 @@ def get_close_event_time_period(alarm_code, config):
 def send_alarm(config, alarm_time_point, alarm_code, alarm_type, do_emit_alarm):
     organization_id = config['login']['organization-id']
     api_token = config['login']['api-token']
+    proxy_config = config['proxy']
 
-    alarm_resources = get_alarm_resources(alarm_code, api_token, config, organization_id)
-    alarm_template_id, message = get_alarm_message(alarm_code, config, organization_id, api_token)
+    alarm_resources = get_alarm_resources(alarm_code, api_token, config, organization_id, proxy_config)
+    alarm_template_id, message = get_alarm_message(alarm_code, config, organization_id, api_token, proxy_config)
 
     request_body = {
         'alarmResources': alarm_resources,
@@ -223,7 +254,8 @@ def send_alarm(config, alarm_time_point, alarm_code, alarm_type, do_emit_alarm):
     preview_endpoint = ''
     if not do_emit_alarm:
         preview_endpoint = '/preview'
-    r = requests.post(API_ENDPOINT + '/alarm' + preview_endpoint, headers=get_header(api_token), json=request_body)
+    r = requests.post(API_ENDPOINT + '/alarm' + preview_endpoint, headers=get_header(api_token), json=request_body,
+                      proxies=_get_proxies(proxy_config))
     json_response = _get_json_response(r)
     r.raise_for_status()
 
@@ -235,7 +267,7 @@ def send_alarm(config, alarm_time_point, alarm_code, alarm_type, do_emit_alarm):
     return json_response
 
 
-def get_alarm_message(alarm_code, config, organization_id, api_token):
+def get_alarm_message(alarm_code, config, organization_id, api_token, proxy_config):
     _check_alarm_code_has_config(alarm_code, config)
 
     message = None
@@ -245,14 +277,15 @@ def get_alarm_message(alarm_code, config, organization_id, api_token):
     if 'message' in alarm_config:
         message = alarm_config['message']
     elif 'messageTemplate' in alarm_config:
-        alarm_template_id = get_alarm_template_id(alarm_config['messageTemplate'], organization_id, api_token)
+        alarm_template_id = get_alarm_template_id(alarm_config['messageTemplate'], organization_id, api_token,
+                                                  proxy_config)
     else:
         raise ValueError('Incorrect YAML configuration file: no alarm message')
 
     return alarm_template_id, message
 
 
-def get_alarm_resources(alarm_code, api_token, config, organization_id):
+def get_alarm_resources(alarm_code, api_token, config, organization_id, proxy_config):
     _check_alarm_code_has_config(alarm_code, config)
 
     resources = config['alarms'][alarm_code]['resources']
@@ -262,19 +295,19 @@ def get_alarm_resources(alarm_code, api_token, config, organization_id):
         label_names = []
         for entry in resources['labels']:
             label_names.append(list(entry.keys())[0])
-        label_ids = get_ids_for_labels(label_names, organization_id, api_token)
+        label_ids = get_ids_for_labels(label_names, organization_id, api_token, proxy_config)
         labels_array = []
         for index, entry in enumerate(resources['labels']):
             labels_array.append({'amount': list(entry.values())[0], 'labelID': label_ids[index]})
         alarm_resources = {'labels': labels_array}
     elif 'units' in resources:
-        unit_ids = get_ids_for_units(resources['units'], organization_id, api_token)
+        unit_ids = get_ids_for_units(resources['units'], organization_id, api_token, proxy_config)
         alarm_resources = {'units': unit_ids}
     elif 'users' in resources:
-        user_ids = get_ids_for_users(resources['users'], organization_id, api_token)
+        user_ids = get_ids_for_users(resources['users'], organization_id, api_token, proxy_config)
         alarm_resources = {'users': user_ids}
     elif 'scenarios' in resources:
-        scenario_ids = get_ids_for_scenarios(resources['scenarios'], organization_id, api_token)
+        scenario_ids = get_ids_for_scenarios(resources['scenarios'], organization_id, api_token, proxy_config)
         alarm_resources = {'scenarios': scenario_ids}
     else:
         raise ValueError('Incorrect YAML configuration file: no alarm resources')

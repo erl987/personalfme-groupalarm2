@@ -58,6 +58,13 @@ login:
   organization-id: 12345
   api-token: abcdefgh
 
+# optional:
+proxy:
+  address: 10.10.10.10
+  port: 8000
+  username: user  # optional
+  password: passwd  # optional
+
 alarms:
   "09234":
     resources:
@@ -97,6 +104,10 @@ ein, um die nötigen Informationen festzustellen:
   wie ein Passwort und sollte entsprechend behandelt werden. **Jeder kann mit diesem Schlüssel Alarmierungen auslösen.**
   Geben Sie dem API-Schlüssel einen sinnvollen Namen wie z.B. `PersonalFME`.
 
+### Proxy
+
+Wenn nötig, kann ein HTTPS-Proxyserver konfiguriert werden. Normalerweise ist das nur bei größeren Organisationen der
+Fall.
 
 ### Alarmschleifen
 

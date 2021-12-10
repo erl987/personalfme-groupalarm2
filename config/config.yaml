@@ -2,6 +2,12 @@ login:
   organization-id: 12345
   api-token: abcdefgh
 
+#proxy:
+#  address: 10.10.10.10
+#  port: 8000
+#  username: user
+#  password: passwd
+
 alarms:
   "12345":
     resources:
