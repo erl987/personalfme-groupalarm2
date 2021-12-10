@@ -355,6 +355,7 @@ def main():
         config = read_config_file(config_file_path)
         send_alarm(config, alarm_time_point, alarm_code, alarm_type, do_emit_alarm)
     except Exception as e:
+        exit(-1)
         print(f'Error: {e}', file=sys.stderr)
 
 
