@@ -135,6 +135,9 @@ def read_config_file(config_file_path):
 
 
 def _get_proxies(proxy_config):
+    if not proxy_config:
+        return {}
+
     if 'username' in proxy_config:
         user = proxy_config['username']
     else:
@@ -230,7 +233,10 @@ def get_close_event_time_period(alarm_code, config):
 def send_alarm(config, alarm_time_point, alarm_code, alarm_type, do_emit_alarm):
     organization_id = config['login']['organization-id']
     api_token = config['login']['api-token']
-    proxy_config = config['proxy']
+    if 'proxy' in config:
+        proxy_config = config['proxy']
+    else:
+        proxy_config = None
 
     alarm_resources = get_alarm_resources(alarm_code, api_token, config, organization_id, proxy_config)
     alarm_template_id, message = get_alarm_message(alarm_code, config, organization_id, api_token, proxy_config)
