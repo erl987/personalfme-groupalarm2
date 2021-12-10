@@ -66,7 +66,7 @@ proxy:
   password: passwd  # optional
 
 alarms:
-  "09234":
+  "09234":  # die alarmierte Fünftonfolge (Alarmschleife)
     resources:
       # nur EINE der folgenden Möglichkeiten:
       labels:
@@ -111,8 +111,8 @@ Fall.
 
 ### Alarmschleifen
 
-Für jede Alarmschleife muss eine separate Groupalarm-Konfiguration angegeben werden. Diese wird später durch die
-Angabe der entsprechenden Schleife als Kommandozeilenparameter ausgelöst.
+Für jede Alarmschleife (Fünftonfolge) muss eine separate Groupalarm-Konfiguration angegeben werden. Diese wird später
+durch die Angabe der entsprechenden Schleife als Kommandozeilenparameter ausgelöst.
 
 
 ### Alarm-Ressourcen
