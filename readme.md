@@ -13,7 +13,7 @@ Das Programm besteht aus einer einzigen Datei: `trigger_groupalarm.py`
 **Voraussetzung ist eine funktionierende Installation von Python 3.6+**.
 
 ```commandline
-python3 trigger_groupalarm.py [-h] [-t] [-c CONFIG_FILE] code time_point type
+python3 trigger_groupalarm.py [-h] [-t] [-d] [-c CONFIG_FILE] code time_point type
 ```
 
 ## Argumente
