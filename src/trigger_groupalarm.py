@@ -17,6 +17,7 @@
 import argparse
 import os
 import sys
+import traceback
 from datetime import datetime, timedelta
 from typing import List
 
@@ -101,37 +102,41 @@ def get_header(api_token):
 
 
 def read_config_file(config_file_path):
-    with open(config_file_path) as yaml_file:
-        config = yaml.load(yaml_file, Loader=yaml.FullLoader)
+    try:
+        with open(config_file_path) as yaml_file:
+            config = yaml.load(yaml_file, Loader=yaml.FullLoader)
 
-    v = Validator(require_all=True)
-    if not v.validate({'config': config}, YAML_CONFIG_FILE_SCHEMA):
-        raise SyntaxError(v.errors)
+        v = Validator(require_all=True)
+        if not v.validate({'config': config}, YAML_CONFIG_FILE_SCHEMA):
+            raise SyntaxError(v.errors)
 
-    if 'login' not in config:
-        config['login'] = {}
+        if 'login' not in config:
+            config['login'] = {}
 
-    if 'organization-id' not in config['login']:
-        if 'ORGANIZATION_ID' not in os.environ:
-            raise EnvironmentError('The Groupalarm organization id either needs to be provided in the environment '
-                                   'variable ORGANIZATION_ID or in the YAML configuration file')
-        config['login']['organization-id'] = int(os.getenv('ORGANIZATION_ID'))
-    else:
-        if 'ORGANIZATION_ID' in os.environ:
-            raise EnvironmentError('The Groupalarm organization id is both provided in the environment variable '
-                                   'ORGANIZATION_ID as well as in the YAML configuration file')
+        if 'organization-id' not in config['login']:
+            if 'ORGANIZATION_ID' not in os.environ:
+                raise EnvironmentError('The Groupalarm organization id either needs to be provided in the environment '
+                                       'variable ORGANIZATION_ID or in the YAML configuration file')
+            config['login']['organization-id'] = int(os.getenv('ORGANIZATION_ID'))
+        else:
+            if 'ORGANIZATION_ID' in os.environ:
+                raise EnvironmentError('The Groupalarm organization id is both provided in the environment variable '
+                                       'ORGANIZATION_ID as well as in the YAML configuration file')
 
-    if 'api-token' not in config['login']:
-        if 'API_TOKEN' not in os.environ:
-            raise EnvironmentError('The Groupalarm API token either needs to be provided in the environment '
-                                   'variable API-TOKEN or in the YAML configuration file')
-        config['login']['api-token'] = os.getenv('API_TOKEN')
-    else:
-        if 'API_TOKEN' in os.environ:
-            raise EnvironmentError('The Groupalarm API token is both provided in the environment variable '
-                                   'API_TOKEN as well as in the YAML configuration file')
+        if 'api-token' not in config['login']:
+            if 'API_TOKEN' not in os.environ:
+                raise EnvironmentError('The Groupalarm API token either needs to be provided in the environment '
+                                       'variable API-TOKEN or in the YAML configuration file')
+            config['login']['api-token'] = os.getenv('API_TOKEN')
+        else:
+            if 'API_TOKEN' in os.environ:
+                raise EnvironmentError('The Groupalarm API token is both provided in the environment variable '
+                                       'API_TOKEN as well as in the YAML configuration file')
 
-    return config
+        return config
+    except Exception as e:
+        print(f'Fehler beim Lesen der Konfigurationsdatei: {e}', file=sys.stderr)
+        raise
 
 
 def _get_proxies(proxy_config):
@@ -189,7 +194,7 @@ def _get_json_response(r):
         if 'success' in response and 'error' in response and not response['success']:
             message = response['message']
             details = response['error']
-            print(f'Error message: {message}, details: {details}', file=sys.stderr)
+            print(f'Information vom Server Groupalarm.com: {message}, Details: {details}', file=sys.stderr)
     else:
         response = None
 
@@ -231,46 +236,48 @@ def get_close_event_time_period(alarm_code, config):
 
 
 def send_alarm(config, alarm_time_point, alarm_code, alarm_type, do_emit_alarm):
-    organization_id = config['login']['organization-id']
-    api_token = config['login']['api-token']
-    if 'proxy' in config:
-        proxy_config = config['proxy']
-    else:
-        proxy_config = None
+    try:
+        organization_id = config['login']['organization-id']
+        api_token = config['login']['api-token']
+        if 'proxy' in config:
+            proxy_config = config['proxy']
+        else:
+            proxy_config = None
 
-    alarm_resources = get_alarm_resources(alarm_code, api_token, config, organization_id, proxy_config)
-    alarm_template_id, message = get_alarm_message(alarm_code, config, organization_id, api_token, proxy_config)
+        alarm_resources = get_alarm_resources(alarm_code, api_token, config, organization_id, proxy_config)
+        alarm_template_id, message = get_alarm_message(alarm_code, config, organization_id, api_token, proxy_config)
 
-    request_body = {
-        'alarmResources': alarm_resources,
-        'organizationID': organization_id,
-        'startTime': to_isoformat_string(datetime.utcnow()),
-        'eventName': f'[Funkmelderalarm] Schleife {alarm_code} {alarm_time_point} ({alarm_type})'
-    }
+        request_body = {
+            'alarmResources': alarm_resources,
+            'organizationID': organization_id,
+            'startTime': to_isoformat_string(datetime.utcnow()),
+            'eventName': f'[Funkmelderalarm] Schleife {alarm_code} {alarm_time_point} ({alarm_type})'
+        }
 
-    close_event_time_period = get_close_event_time_period(alarm_code, config)
-    if close_event_time_period:
-        request_body['scheduledEndTime'] = to_isoformat_string(datetime.utcnow() + close_event_time_period)
+        close_event_time_period = get_close_event_time_period(alarm_code, config)
+        if close_event_time_period:
+            request_body['scheduledEndTime'] = to_isoformat_string(datetime.utcnow() + close_event_time_period)
 
-    if message:
-        request_body['message'] = message
-    elif alarm_template_id:
-        request_body['alarmTemplateID'] = alarm_template_id
+        if message:
+            request_body['message'] = message
+        elif alarm_template_id:
+            request_body['alarmTemplateID'] = alarm_template_id
 
-    preview_endpoint = ''
-    if not do_emit_alarm:
-        preview_endpoint = '/preview'
-    r = requests.post(API_ENDPOINT + '/alarm' + preview_endpoint, headers=get_header(api_token), json=request_body,
-                      proxies=_get_proxies(proxy_config))
-    json_response = _get_json_response(r)
-    r.raise_for_status()
+        preview_endpoint = ''
+        if not do_emit_alarm:
+            preview_endpoint = '/preview'
+        r = requests.post(API_ENDPOINT + '/alarm' + preview_endpoint, headers=get_header(api_token), json=request_body,
+                          proxies=_get_proxies(proxy_config))
+        _get_json_response(r)
+        r.raise_for_status()
 
-    if do_emit_alarm:
-        print('Triggered successfully the alarm')
-    else:
-        print('The alarm configuration was validated and tested on Groupalarm.com and is valid')
-
-    return json_response
+        if do_emit_alarm:
+            print('Alarm erfolgreich ausgelöst')
+        else:
+            print('Die Alarmkonfiguration wurde auf Groupalarm.com getestet und ist gültig')
+    except Exception as e:
+        print(f'Fehler beim Versand der Alarmierung: {e}', file=sys.stderr)
+        raise
 
 
 def get_alarm_message(alarm_code, config, organization_id, api_token, proxy_config):
@@ -327,35 +334,51 @@ def _check_alarm_code_has_config(alarm_code, config):
 
 
 def get_command_line_arguments():
-    parser = argparse.ArgumentParser(description='Trigger a GroupAlarm.com alarm')
-    parser.add_argument('code', type=str, help='The selcall alarm code (e.g. 09234)')
-    parser.add_argument('time_point', type=str, help='The time point where the alarm has been received, '
-                                                     'e.g. "05.12.2021 19:51:52"')
-    parser.add_argument('type', type=str, help='The type of the alarm (e.g. "Einsatzalarmierung" or "Probealarm")')
-    parser.add_argument('-t', '--test', action='store_true', help='Only tests if this configuration would be valid - '
-                                                                  'no alarm is actually emitted')
-    parser.add_argument('-c', '--config-file', help='Path to the YAML configuration file, if not provided the default '
-                                                    'configuration file `config/config.yaml` is used')
+    try:
+        parser = argparse.ArgumentParser(description='Trigger a GroupAlarm.com alarm')
+        parser.add_argument('code', type=str, help='The selcall alarm code (e.g. 09234)')
+        parser.add_argument('time_point', type=str, help='The time point where the alarm has been received, '
+                                                         'e.g. "05.12.2021 19:51:52"')
+        parser.add_argument('type', type=str, help='The type of the alarm (e.g. "Einsatzalarmierung" or "Probealarm")')
+        parser.add_argument('-t', '--test', action='store_true',
+                            help='Only tests if this configuration would be valid - '
+                                 'no alarm is actually emitted')
+        parser.add_argument('-d', '--debug', action='store_true',
+                            help='Print additional debug information')
+        parser.add_argument('-c', '--config-file',
+                            help='Path to the YAML configuration file, if not provided the default '
+                                 'configuration file `config/config.yaml` is used')
 
-    args = parser.parse_args()
-    do_emit_alarm = not args.test
+        args = parser.parse_args()
+        do_emit_alarm = not args.test
 
-    if args.config_file:
-        config_file_path = args.config_file
-    else:
-        config_file_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                                        DEFAULT_CONFIG_FILE_PATH))
+        if args.config_file:
+            config_file_path = args.config_file
+        else:
+            config_file_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                            DEFAULT_CONFIG_FILE_PATH))
 
-    return args.time_point, args.code, args.type, do_emit_alarm, config_file_path
+        return args.time_point, args.code, args.type, do_emit_alarm, config_file_path, args.debug
+    except Exception as e:
+        print(f'Fehler beim Verarbeiten der Aufrufparameter: {e}', file=sys.stderr)
+        raise
 
 
 def main():
+    is_debug_mode = True  # only valid until overwritten by the command line arguments
+    # noinspection PyBroadException
     try:
-        alarm_time_point, alarm_code, alarm_type, do_emit_alarm, config_file_path = get_command_line_arguments()
+        alarm_time_point, alarm_code, alarm_type, do_emit_alarm, config_file_path, is_debug_mode = \
+            get_command_line_arguments()
+
+        if is_debug_mode:
+            print('Aufrufparameter: ' + ','.join(sys.argv))
+
         config = read_config_file(config_file_path)
         send_alarm(config, alarm_time_point, alarm_code, alarm_type, do_emit_alarm)
-    except Exception as e:
-        print(f'Error: {e}', file=sys.stderr)
+    except Exception:
+        if is_debug_mode:
+            traceback.print_exc(file=sys.stderr)
         exit(-1)
 
 

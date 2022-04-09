@@ -3,8 +3,8 @@
 Dieses plattformunabhängige Kommandozeilenprogramm ist vorrangig für die Auslösung von Alarmierungen in
 *PersonalFME* (www.personalfme.de) entwickelt worden. Es kann jedoch auch als eigenständige Software genutzt werden.
 
-**Dieses Programm funktioniert nur mit dem *neuen* Dienst von Groupalarm (www.groupalarm.com).** Groupalarm ist
-ein kostenpflichtiger Dienst, für den ein separater Vertrag notwendig ist.
+**Dieses Programm funktioniert nur mit dem *neuen* Dienst von Groupalarm (www.groupalarm.com).** Groupalarm ist ein
+kostenpflichtiger Dienst, für den ein separater Vertrag notwendig ist.
 
 Das Programm besteht aus einer einzigen Datei: `trigger_groupalarm.py`
 
@@ -17,22 +17,26 @@ python3 trigger_groupalarm.py [-h] [-t] [-c CONFIG_FILE] code time_point type
 ```
 
 ## Argumente
-  |Argument|              Beschreibung|
-  |--------|              ------------|
-  |code|                  Die ausgelöste Alarmschleife (z.B. 09234)|
-  |time_point|            Der Alarmzeitpunkt in beliebigem Format, z.B. "05.12.2021 19:51:52"|
-  |type|                  Die Art der Alarmierung, beliebig (z.B. "Einsatzalarmierung" oder "Probealarm")|
+
+| Argument      | Beschreibung                                                                    |
+|---------------|---------------------------------------------------------------------------------|
+| code          | Die ausgelöste Alarmschleife (z.B. 09234)                                       |
+| time_point    | Der Alarmzeitpunkt in beliebigem Format, z.B. "05.12.2021 19:51:52"             |
+| type          | Die Art der Alarmierung, beliebig (z.B. "Einsatzalarmierung" oder "Probealarm") |
 
 ## Optionale Argumente
-  |Argument|            Beschreibung|
-  |--------|            ------------|
-  |-h, --help|          Die Hilfe anzeigen|
-  |-t, --test|          Testet ob die Alarmkonfiguration korrekt ist und auf dem Groupalarm.com Server ausgelöst werden könnte - es wird kein tatsächlicher Alarm ausgelöst|
-  |-c CONFIG_FILE, --config-file CONFIG_FILE| Alternativer Pfad für die YAML-Konfigurationsdatei, falls nicht angegeben muss die Konfigurationsdatei hier liegen: `config/config.yaml`|
+
+| Argument                                  | Beschreibung                                                                                                                                        |
+|-------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| -h, --help                                | Die Hilfe anzeigen                                                                                                                                  |
+| -t, --test                                | Testet ob die Alarmkonfiguration korrekt ist und auf dem Groupalarm.com Server ausgelöst werden könnte - es wird kein tatsächlicher Alarm ausgelöst |
+| -c CONFIG_FILE, --config-file CONFIG_FILE | Alternativer Pfad für die YAML-Konfigurationsdatei, falls nicht angegeben muss die Konfigurationsdatei hier liegen: `config/config.yaml`            |
+| -d, --debug                               | Zeigt zusätzliche Informationen für die Fehlersuche                                                                                                 |
 
 ## Beispiele
 
 ### Auslösung eines Alarms
+
 ```commandline
 python3 trigger_groupalarm.py -c /home/<user>/config/config.yaml 09234 "05.12.2021 19:51:52" Einsatzalarmierung
 ```
@@ -43,11 +47,10 @@ python3 trigger_groupalarm.py -c /home/<user>/config/config.yaml 09234 "05.12.20
 python3 trigger_groupalarm.py -t -c /home/<user>/config/config.yaml 09234 "05.12.2021 19:51:52" Einsatzalarmierung
 ```
 
-Wenn die Konfiguration ungültig ist, wird eine entsprechende Fehlermeldung ausgegeben. Dieser Befehl testet auch auf
-dem Server von Groupalarm, ob der Alarm tatsächlich ausgelöst werden könnte.
+Wenn die Konfiguration ungültig ist, wird eine entsprechende Fehlermeldung ausgegeben. Dieser Befehl testet auch auf dem
+Server von Groupalarm, ob der Alarm tatsächlich ausgelöst werden könnte.
 
 **Hinweis:** Je nach Python-Installation kann das Kommando auch `python` sein (vor allem unter Windows).
-
 
 # Konfiguration
 
@@ -66,7 +69,7 @@ proxy:
   password: passwd  # optional
 
 alarms:
-  "09234":  # die alarmierte Fünftonfolge (Alarmschleife)
+  "09234": # die alarmierte Fünftonfolge (Alarmschleife)
     resources:
       # nur EINE der folgenden Möglichkeiten:
       labels:
@@ -85,10 +88,11 @@ alarms:
     closeEventInHours: 2
   "12345":
     resources:
-      # Konfiguration für eine weitere Alarmschleife ...
+    # Konfiguration für eine weitere Alarmschleife ...
 ```
 
 Alternativ können die Login-Informationen in Umgebungsvariablen gespeichert werden:
+
 * `ORGANIZATION_ID`
 * `API_TOKEN`
 
@@ -100,8 +104,8 @@ Hier werden die erforderlichen Informationen aus Ihrem Konto bei www.groupalarm.
 ein, um die nötigen Informationen festzustellen:
 
 * Unter *Organisation* -> *...* -> *Einstellungen* finden Sie Ihre Organisations-ID.
-* Unter *Admin* -> *Berechtigungen* -> *API-Schlüssel* können Sie Ihren API-Schlüssel erzeugen, dieser funktioniert
-  wie ein Passwort und sollte entsprechend behandelt werden. **Jeder kann mit diesem Schlüssel Alarmierungen auslösen.**
+* Unter *Admin* -> *Berechtigungen* -> *API-Schlüssel* können Sie Ihren API-Schlüssel erzeugen, dieser funktioniert wie
+  ein Passwort und sollte entsprechend behandelt werden. **Jeder kann mit diesem Schlüssel Alarmierungen auslösen.**
   Geben Sie dem API-Schlüssel einen sinnvollen Namen wie z.B. `PersonalFME`.
 
 ### Proxy
@@ -114,14 +118,12 @@ Fall.
 Für jede Alarmschleife (Fünftonfolge) muss eine separate Groupalarm-Konfiguration angegeben werden. Diese wird später
 durch die Angabe der entsprechenden Schleife als Kommandozeilenparameter ausgelöst.
 
-
 ### Alarm-Ressourcen
 
-Es können **entweder** Labels, Szenarien oder Einheiten alarmiert werden. Diese können nicht gemischt werden.
-Im Falle von Labels wird für jede Position die gewünschte Anzahl festgelegt.
-In allen Fällen erfolgt die Angabe über den in Groupalarm.com definierten *Namen* der Ressource. **Dieser sollte keine
-Umlaute oder Sonderzeichen enthalten, um Problemen mit dem Encoding der YAML-Datei vorzubeugen**.
-Konfigurieren Sie Groupalarm so, wie Sie das benötigen.
+Es können **entweder** Labels, Szenarien oder Einheiten alarmiert werden. Diese können nicht gemischt werden. Im Falle
+von Labels wird für jede Position die gewünschte Anzahl festgelegt. In allen Fällen erfolgt die Angabe über den in
+Groupalarm.com definierten *Namen* der Ressource. **Dieser sollte keine Umlaute oder Sonderzeichen enthalten, um
+Problemen mit dem Encoding der YAML-Datei vorzubeugen**. Konfigurieren Sie Groupalarm so, wie Sie das benötigen.
 
 ### Alarmnachricht
 
@@ -142,12 +144,12 @@ könnte das so aussehen:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 
-<config	xmlns="http://www.personalfme.de/v1"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://www.personalfme.de/v1 
+<config xmlns="http://www.personalfme.de/v1"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.personalfme.de/v1 
         C:/Users\Benutzer\AppData\Roaming\PersonalFME\schema\config.xsd">
 
-     <logins>
+    <logins>
         <external/>
     </logins>
 
@@ -156,7 +158,7 @@ könnte das so aussehen:
             <default>
                 <alarms>
                     <external>
-                        <command>call "C:\Users\<User>\Anaconda3\condabin\conda.bat" run "C:\Users\<User>\Anaconda3\python.exe" "C:\Users\<User>\Documents\code\personalfme-groupalarm2\src\trigger_groupalarm.py"</command>
+                        <command>call "C:\Users\[User]\Anaconda3\condabin\conda.bat" run "C:\Users\[User]\Anaconda3\python.exe" "C:\Users\[User]\Documents\code\personalfme-groupalarm2\src\trigger_groupalarm.py"</command>
                         <arguments>$CODE "$TIME" $TYPE</arguments>
                     </external>
                 </alarms>
@@ -171,6 +173,7 @@ könnte das so aussehen:
 Unter Linux unterscheidet sich der Aufruf von Python und könnte so aussehen:
 
 ```xml
+
 <external>
     <command>python3 /opt/personalfme-groupalarm2/src/trigger_groupalarm.py</command>
     <arguments>$CODE "$TIME" $TYPE</arguments>
@@ -181,24 +184,22 @@ Die entsprechenden Pfade müssen natürlich an die entsprechende Situation auf d
 
 Für weitere Details wird auf das Handbuch von PersonalFME verwiesen: http://personalfme.de/handbuch.html
 
-
-
 # Python-Umgebung
 
-Das Programm benötigt eine funktionierende Installation von Python 3.6+. Dafür gibt es verschiedene Möglichkeiten
-auf den unterschiedlichen Betriebssystemen. Empfehlenswert sind:
+Das Programm benötigt eine funktionierende Installation von Python 3.6+. Dafür gibt es verschiedene Möglichkeiten auf
+den unterschiedlichen Betriebssystemen. Empfehlenswert sind:
 
 * Windows: Anaconda Individual Edition, https://www.anaconda.com/products/individual
-* Linux: Python 3 aus dem Paketmanager des Betriebssystem (auf modernen Systemen meist schon vorhanden), unter
-  Debian / Raspberry Pi OS z.B. installierbar mit:
+* Linux: Python 3 aus dem Paketmanager des Betriebssystem (auf modernen Systemen meist schon vorhanden), unter Debian /
+  Raspberry Pi OS z.B. installierbar mit:
 
 ```commandline
 apt install python3
 apt install python3-pip
 ```
 
-Je nach installiertem Python müssen `python` oder `python3` bzw. `pip` oder `pip3` benutzt werden. `python` kann
-auf älteren System jedoch auch auf Python 2 zeigen, welches nicht benutzt werden kann!
+Je nach installiertem Python müssen `python` oder `python3` bzw. `pip` oder `pip3` benutzt werden. `python` kann auf
+älteren System jedoch auch auf Python 2 zeigen, welches nicht benutzt werden kann!
 
 Die nötigen Abhängigkeiten können auf allen Plattformen mit mittels `pip` / `pip3` installiert werden:
 
@@ -210,6 +211,7 @@ Benutzen Sie dafür im Falle von Windows und Anaconda die *Anaconda-Kommandozeil
 anzuwenden.
 
 Sie können auf der Kommandozeile testen, ob Python funktioniert:
+
 ```commandline
 python3 -v
 ```
@@ -220,18 +222,16 @@ gezeigt, wie das unter Windows direkt aus *PersonalFME* heraus funktioniert.
 # Lizenz
 
 **personalfme-groupalarm2 - Trigger alarms via groupalarm.com on the command line**
- 
- **Copyright (C) 2021 Ralf Rettig (info@personalfme.de)**
 
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Affero General Public License as
- published by the Free Software Foundation, either version 3 of the
- License, or (at your option) any later version.
+**Copyright (C) 2021 Ralf Rettig (info@personalfme.de)**
 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Affero General Public License for more details.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public
+License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later
+version.
 
- You should have received a copy of the GNU Affero General Public License
- along with this program.  If not, see <https://www.gnu.org/licenses/>.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not,
+see <https://www.gnu.org/licenses/>.
