@@ -8,6 +8,12 @@ kostenpflichtiger Dienst, für den ein separater Vertrag notwendig ist.
 
 Das Programm besteht aus einer einzigen Datei: `trigger_groupalarm.py`
 
+> **Nicht mehr unterstützt**
+> 
+> Ab Version 1.1.0 ist der aktuelle Dienst von Groupalarm direkt in *PersonalFME* integriert und dieses
+> Kommandozeilenprogramm wird nicht mehr benötigt. Das Repository wird daher nicht mehr weiterentwickelt und ist
+> archiviert.
+
 # Aufruf
 
 **Voraussetzung ist eine funktionierende Installation von Python 3.6+**.
